@@ -72,7 +72,7 @@ class tTxVehicle
 class tTxMavlink
 {
   public:
-    void Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port);
+    void Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge);
     void Do(void);
     uint8_t Task(void);
     uint8_t VehicleState(void);
@@ -147,19 +147,30 @@ class tTxMavlink
 };
 
 
-void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridge, tSerialBase* const _serial2port)
+void tTxMavlink::Init(tSerialPorts* const _serialports, tSerialBase* const _mbridge)
 {
     // if ChannelsSource = MBRIDGE:
     //   SerialPort = SERIAL or SERIAL2 => router with ser = mbridge & ser2 = serial/serial2
     //   SerialPort = MBRIDGE           => no router, only ser = mbridge (ser2 = null)
     // => ser2 != nullptr indicates that router is to be used
+    //
+    // 2\1      | SERIAL         | WBRIDGE/SERIAL2 | COM            | MBRIDGE
+    // ------------------------------------------------------------------------------
+    // NONE     | ser = serial   | ser = serial    | ser = serial   | ser = mbridge
+    //          | ser2 = mbridge | ser2 = mbridge  | ser2 = mbridge | ser2 = null
+    // ------------------------------------------------------------------------------
+    // SERIAL   | should not     | ser = serial    | should not     | ser = mbridge
+    //          | happen         | ser2 = serial2  | happen         | ser2 = serial2
+    // ------------------------------------------------------------------------------
+    // WBRIDGE/ | ser = serial   | should not      | ser = serial   | ser = mbridge
+    // SERIAL2  | ser2 = serial2 | happen          | ser2 = serial2 | ser2 = serial2
+    // ------------------------------------------------------------------------------
     switch (Setup.Tx[Config.ConfigId].SerialPort) {
     case TX_SERIAL_PORT_SERIAL:
-        ser = _serialport;
-        ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
-        break;
     case TX_SERIAL_PORT_SERIAL2:
-        ser = _serial2port;
+    case TX_SERIAL_PORT_WIRELESS_BRIDGE:
+    case TX_SERIAL_PORT_COM:
+        ser = _serialports->serial; // already sorted out in serialports.Init()
         ser2 = (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) ? _mbridge : nullptr;
         break;
     case TX_SERIAL_PORT_MBRIDGE:
@@ -170,6 +181,15 @@ void tTxMavlink::Init(tSerialBase* const _serialport, tSerialBase* const _mbridg
         while(1){} // must not happen
     }
     if (!ser) while(1){} // must not happen
+
+    switch (Setup.Tx[Config.ConfigId].SerialPort2) {
+    case TX_SERIAL_PORT2_SERIAL:
+    case TX_SERIAL_PORT2_SERIAL2:
+    case TX_SERIAL_PORT2_WIRELESS_BRIDGE:
+        ser2 = _serialports->serial2; // already sorted out in serialports.Init(), can be nullptr
+        break;
+    }
+    if (ser == ser2) while(1){} // must not happen
 
     fmav_init();
 
