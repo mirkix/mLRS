@@ -155,7 +155,7 @@ typedef struct
     tSerialBase* uartc; // com port
     tSerialBase* usb; // com port if on USB
 
-    void Init(uint8_t serial_destination, uint32_t baud, uint8_t serial_destination2, uint32_t baud2);
+    void Init(uint8_t serial_port, uint32_t baud, uint8_t serial_port2, uint32_t baud2);
 
     tSerialBase* com_port(void);
 
