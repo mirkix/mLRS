@@ -146,8 +146,8 @@ tUsbPort usb_port;
 
 typedef struct
 {
-    tSerialBase* serial; // assigned according to TxSerDest
-    tSerialBase* com; // assigned according to TxSerDest
+    tSerialBase* serial; // assigned according to TxSerPort
+    tSerialBase* com; // assigned according to TxSerPort
     tSerialBase* serial2; // can be nullptr!
     tSerialBase* jrpin5serial; // can be nullptr! is initialized in init_hw()
     tSerialBase* uartb; // serial port
