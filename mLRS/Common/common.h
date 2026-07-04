@@ -115,7 +115,7 @@ class tDebugPort : public tSerialBase
 };
 
 
-// rx: dronecan
+// rx: dronecan // TODO: make tRxDroneCan a child of tSerialBase
 #if defined DEVICE_HAS_DRONECAN && defined DEVICE_IS_RECEIVER
 #include "../CommonRx/dronecan_interface_rx_types.h"
 extern tRxDroneCan dronecan;
@@ -125,6 +125,7 @@ class tDroneCANPort : public tSerialBase
 {
 #ifdef DEVICE_HAS_DRONECAN
   public:
+    // no Init()
     void putbuf(uint8_t* buf, uint16_t len) override { dronecan.putbuf(buf, len); }
     bool available(void) override { return dronecan.available(); }
     char getc(void) override { return dronecan.getc(); }
@@ -263,21 +264,31 @@ void tSerialPorts::Init(uint8_t serial_port, uint32_t baud, uint8_t serial_port2
 #ifdef DEVICE_IS_RECEIVER
 tUartBPort uartb_port;
 tDroneCANPort dronecan_port;
-tSerialBase* serial;
+// in contrast to the tx code, in the rx code we directly use the pointer to serial
+// works here since we only have one serial, and makes the higher level code simpler
+tSerialBase* serial; // assigned according to RxSerPort
 
-void serial_ports_init(bool is_serial)
+typedef struct
+{
+    void Init(uint8_t serial_port, uint32_t baud);
+} tSerialPorts;
+
+
+void tSerialPorts::Init(uint8_t serial_port, uint32_t baud)
 {
 #if defined USE_SERIAL && defined DEVICE_HAS_DRONECAN
-    if (is_serial) {
-        serial = &uartb_port; // assign uartb to serial
-    } else {
+    if (serial_port == RX_SERIAL_PORT_CAN) {
         serial = &dronecan_port; // assign dronecan to serial
+    } else {
+        serial = &uartb_port; // assign uartb to serial
     }
 #elif defined DEVICE_HAS_DRONECAN
     serial = &dronecan_port;
 #elif defined USE_SERIAL
     serial = &uartb_port;
 #endif
+
+    serial->SetBaudRate(baud);
 }
 #endif // DEVICE_IS_RECEIVER
 
@@ -286,9 +297,7 @@ void serial_ports_init(bool is_serial)
 // Common Variables
 //-------------------------------------------------------
 
-#ifdef DEVICE_IS_TRANSMITTER
 tSerialPorts serials;
-#endif
 tDebugPort dbg;
 
 tRcData rcData;
