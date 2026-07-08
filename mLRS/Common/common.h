@@ -251,7 +251,7 @@ void tSerialPorts::Init(uint8_t serial_port, uint32_t baud, uint8_t serial_port2
     usb = &usb_port;
 
 #ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
-    serial->SetBaudRate(460800); // dirty workaround, fixed baud rate for AX12 due to limitation
+    serial->SetBaudRate((serial == &uartb_port) ? 460800 : baud); // dirty workaround, fixed baud rate for AX12 due to limitation
 #else
     serial->SetBaudRate(baud);
 #endif
