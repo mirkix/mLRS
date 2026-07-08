@@ -30,9 +30,9 @@
 #define DEVICE_HAS_NO_DEBUG
 //#define DEVICE_HAS_NO_SERIAL
 
-//change these defaults
-#undef SETUP_TX_SERIAL_DESTINATION
-#define SETUP_TX_SERIAL_DESTINATION  1 // 0: serial port, 1: wbridge port, 2: serial2 port, 3: com port, 4: mBridge
+// change these defaults
+#undef SETUP_TX_SERIAL_PORT
+#define SETUP_TX_SERIAL_PORT      1 // 0: serial port, 1: wbridge (BT/ESP) port, 2: serial2, 3: com, 4: mBridge
 
 
 //-- Timers, Timing, EEPROM, and such stuff
