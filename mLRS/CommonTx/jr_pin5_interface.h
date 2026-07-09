@@ -121,7 +121,7 @@ class tPin5BridgeBase
     virtual bool transmit_start(void) = 0; // returns true if transmission should be started
 
     // actual isr functions
-    void pin5_rx_callback(uint8_t c);
+    virtual void pin5_rx_callback(uint8_t c);
     void pin5_tc_callback(void);
     void pin5_cc1_callback(void);
 
@@ -269,7 +269,9 @@ void tPin5BridgeBase::pin5_init(void)
 
 void tPin5BridgeBase::pin5_tx_enable(void)
 {
+#if !defined JRPIN5_FULL_DUPLEX
     uart_rx_enableisr(DISABLE);
+#endif
 
 #if defined JRPIN5_TX_OE
     JRPIN5_TX_OE_ENABLED;

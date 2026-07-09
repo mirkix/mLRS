@@ -320,6 +320,15 @@ The default selection of frequency bands can be overruled by feature defines.
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
+#ifdef TX_UAV_DEV_E77_E28_DUALBAND_WLE5CC
+  #define DEVICE_NAME "UAV-DEV E77 E28 DualBand"
+  #define DEVICE_IS_TRANSMITTER
+  #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
+  #define FREQUENCY_BAND_868_MHZ
+  #define FREQUENCY_BAND_915_MHZ_FCC
+  #define FREQUENCY_BAND_2P4_GHZ
+#endif
+
 
 #ifdef RX_DIY_E77_E22_DUALBAND_WLE5CC
   #define DEVICE_NAME "DIY E77 E22 DualBand"

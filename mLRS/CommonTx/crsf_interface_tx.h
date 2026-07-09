@@ -81,6 +81,9 @@ class tTxCrsf : public tPin5BridgeBase
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
 
+    // full-duplex override: called by crsf_pin5_rx_callback free function (must be public)
+    void pin5_rx_callback(uint8_t c) override;
+
   private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
@@ -88,13 +91,15 @@ class tTxCrsf : public tPin5BridgeBase
     uint8_t crc8(const uint8_t* const buf);
     void fill_rcdata(tRcData* const rc);
 
-    // for in-isr processing, used in half-duplex mode
+    // for in-isr processing
     void parse_nextchar(uint8_t c) override;
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
 
     uint8_t frame[CRSF_BUF_SIZE]; // received frame
+    volatile uint8_t rx_state; // CRSF RX parser state, separate from TX state machine 'state'
+    volatile bool rx_frame_received;
     volatile bool channels_received;
     volatile bool cmd_received;
     volatile bool ping_device_received;
@@ -248,21 +253,21 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 {
     uint16_t tnow_us = micros16();
 
-    if (state != STATE_IDLE) {
+    if (rx_state != STATE_IDLE) {
         uint16_t dt = tnow_us - tlast_us;
-        if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
+        if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) rx_state = STATE_IDLE;
 
-        if (cnt >= sizeof(frame)) state = STATE_IDLE; // prevent buffer overflow
+        if (cnt >= sizeof(frame)) rx_state = STATE_IDLE; // prevent buffer overflow
     }
 
     tlast_us = tnow_us;
 
-    switch (state) {
+    switch (rx_state) {
     case STATE_IDLE:
         if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
             cnt = 0;
             frame[cnt++] = c;
-            state = STATE_RECEIVE_CRSF_LEN;
+            rx_state = STATE_RECEIVE_CRSF_LEN;
 #ifdef USE_DEBUG
             if (discarded) {
                 if (discarded > 1) {
@@ -278,15 +283,15 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         break;
 
     case STATE_RECEIVE_CRSF_LEN:
-        if (c >= (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
+        if (c >= (CRSF_FRAME_LEN_MAX - 2)) { rx_state = STATE_IDLE; break; } // cannot be a valid CRSF frame
         frame[cnt++] = c;
         len = c;
-        state = STATE_RECEIVE_CRSF_PAYLOAD;
+        rx_state = STATE_RECEIVE_CRSF_PAYLOAD;
         break;
     case STATE_RECEIVE_CRSF_PAYLOAD:
         frame[cnt++] = c;
         if (cnt >= len + 1) {
-            state = STATE_RECEIVE_CRSF_CRC;
+            rx_state = STATE_RECEIVE_CRSF_CRC;
         }
         break;
     case STATE_RECEIVE_CRSF_CRC:
@@ -317,8 +322,31 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         } else {
             cmd_received = true;
         }
-        state = STATE_TRANSMIT_START;
+        rx_state = STATE_IDLE;
+        rx_frame_received = true; // signal frame complete; pin5_rx_callback() triggers TX
         break;
+    }
+}
+
+
+// is called in isr context; full-duplex override: RX parse state is rx_state, independent of TX state machine
+void tTxCrsf::pin5_rx_callback(uint8_t c)
+{
+    parse_nextchar(c); // uses rx_state, never touches 'state'
+    if (!rx_frame_received) return;
+    rx_frame_received = false;
+    if (state >= STATE_TRANSMIT_START) return; // TX already in progress
+    if (transmit_start()) {
+        if (txclock.HasCC1Callback()) {
+            txclock.StartCC1Delay(250);
+            state = STATE_TRANSMIT_PENDING;
+        } else {
+            pin5_tx_enable();
+            state = STATE_TRANSMITING;
+            pin5_tx_start();
+        }
+    } else {
+        state = STATE_IDLE;
     }
 }
 
@@ -375,6 +403,8 @@ void tTxCrsf::Init(bool enable_flag)
 
     tx_available = 0;
     tx_free = false;
+    rx_state = STATE_IDLE;
+    rx_frame_received = false;
     channels_received = false;
     cmd_received = false;
     ping_device_received = false;

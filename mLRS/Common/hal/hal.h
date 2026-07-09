@@ -240,6 +240,10 @@ extern "C" { void delay_ms(uint16_t ms); }
 #include "stm32/tx-hal-easysolder-e77-e28-dualband-wle5cc.h"
 #endif
 
+#ifdef TX_UAV_DEV_E77_E28_DUALBAND_WLE5CC
+#include "stm32/tx-hal-uav-dev-e77-e28-dualband-wle5cc.h"
+#endif
+
 
 //-- DIY Boards, LR2021 Devices
 
