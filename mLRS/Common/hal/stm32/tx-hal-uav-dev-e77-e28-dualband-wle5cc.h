@@ -59,13 +59,7 @@
 #define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
 
 #define UART_USE_UART2_PA2PA3     // CRSF full-duplex, no inversion
-#if defined MLRS_FEATURE_JRPIN5_921600
-#define UART_BAUD                 921600
-#elif defined MLRS_FEATURE_JRPIN5_460800
-#define UART_BAUD                 460800
-#else
 #define UART_BAUD                 400000
-#endif
 #define UART_USE_TX
 #define UART_TXBUFSIZE            512
 #define UART_USE_TX_ISR

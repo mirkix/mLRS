@@ -1174,15 +1174,6 @@ TLIST = [
         'extra_D_list' : ['MLRS_FEATURE_E77_XTAL'],
         'appendix' : '-xtal',
     },{
-        'target' : 'tx-uav-dev-E77-E28-dualband-wle5cc', 'target_D' : 'TX_UAV_DEV_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : ['MLRS_FEATURE_JRPIN5_460800'],
-        'appendix' : '-460800-tcxo',
-    },{
-        'target' : 'tx-uav-dev-E77-E28-dualband-wle5cc', 'target_D' : 'TX_UAV_DEV_E77_E28_DUALBAND_WLE5CC',
-        'extra_D_list' : ['MLRS_FEATURE_JRPIN5_460800', 'MLRS_FEATURE_E77_XTAL'],
-        'appendix' : '-460800-xtal',
-
-    },{
         'target' : 'tx-easysolder-E77-E22-dual-wle5cc', 'target_D' : 'TX_DIY_E77_E22_DUALBAND_WLE5CC',
         'extra_D_list' : [],
         'appendix' : '-dualband-tcxo',
