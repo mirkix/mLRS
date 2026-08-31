@@ -23,7 +23,7 @@
 // CRSF full-duplex on UART2 PA2/PA3, no inversion
 #define DEVICE_HAS_JRPIN5
 #define JRPIN5_FULL_DUPLEX        // separate TX/RX pins: do not disable RX ISR during TX
-#define DEVICE_HAS_SERIAL_OR_COM
+#define DEVICE_HAS_COM_ON_SERIAL  // serial or com selected by BUTTON during power on
 #define DEVICE_HAS_DEBUG_SWUART
 
 
@@ -42,7 +42,7 @@
 // UARTC = COM (CLI)
 // UART  = JR bay pin5 / CRSF full-duplex
 
-#define UARTB_USE_UART1_PB6PB7    // serial TX/RX
+#define UARTB_USE_UART1_PB6PB7    // serial or com
 #define UARTB_BAUD                TX_SERIAL_BAUDRATE
 #define UARTB_USE_TX
 #define UARTB_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
@@ -50,13 +50,13 @@
 #define UARTB_USE_RX
 #define UARTB_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
 
-#define UARTC_USE_UART1_PB6PB7    // com USB/CLI
+/* #define UARTC_USE_UART1_PB6PB7 // com
 #define UARTC_BAUD                TX_COM_BAUDRATE
 #define UARTC_USE_TX
 #define UARTC_TXBUFSIZE           TX_COM_TXBUFSIZE_LARGE
 #define UARTC_USE_TX_ISR
 #define UARTC_USE_RX
-#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE
+#define UARTC_RXBUFSIZE           TX_COM_RXBUFSIZE */
 
 #define UART_USE_UART2_PA2PA3     // CRSF full-duplex, no inversion
 #define UART_BAUD                 400000
@@ -230,7 +230,7 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 bool uavdev_ser_or_com_serial = true;
 
-void ser_or_com_init(void)
+bool ser_or_com_init(void) // return true if is_serial
 {
     gpio_init(BUTTON, IO_MODE_INPUT_PU, IO_SPEED_DEFAULT);
     uint8_t cnt = 0;
@@ -238,6 +238,7 @@ void ser_or_com_init(void)
         if (gpio_read_activelow(BUTTON)) cnt++;
     }
     uavdev_ser_or_com_serial = !(cnt > 8);
+    return uavdev_ser_or_com_serial;
 }
 
 bool ser_or_com_serial(void)
